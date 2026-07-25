@@ -9,12 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.20",
+    "@ai-sdk/openai": "^4.0.20",
     "@anthropic-ai/sdk": "^0.115.0",
+    "@langfuse/client": "^5.9.1",
+    "@langfuse/otel": "^5.9.1",
+    "@langfuse/tracing": "^5.9.1",
+    "@langfuse/vercel-ai-sdk": "^5.9.1",
+    "@opentelemetry/sdk-node": "^0.221.0",
+    "ai": "^7.0.37",
     "next": "16.2.12",
     "openai": "^6.49.0",
     "pg": "^8.22.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
