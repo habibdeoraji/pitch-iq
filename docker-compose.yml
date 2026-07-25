@@ -1,0 +1,16 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pitchiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - pitchiq_pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+volumes:
+  pitchiq_pgdata:
