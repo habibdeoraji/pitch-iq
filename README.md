@@ -16,7 +16,7 @@ npm run dev
 - **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS
 - **LLM access**: `ai` (Vercel AI SDK) with `@ai-sdk/anthropic` / `@ai-sdk/openai`, plus the raw `@anthropic-ai/sdk` and `openai` SDKs
 - **Database**: Postgres + pgvector (`docker-compose.yml`, client in `src/lib/db.ts`)
-- **Tracing**: Langfuse, wired up via OpenTelemetry in `src/instrumentation.ts` — see `src/app/api/chat/route.ts` for the instrumentation pattern to follow on new LLM routes
+- **Tracing**: Langfuse, wired up via OpenTelemetry in `src/instrumentation.ts` — wrap new LLM routes with `observe()` from `@langfuse/tracing` (see the [langfuse skill](.claude/skills/langfuse) for the instrumentation pattern)
 - **CI**: GitHub Actions runs lint + build on every push/PR to `main`
 
 ## Scripts
