@@ -1,14 +1,18 @@
-import { generateText } from 'ai'
-import { DEFAULT_MODEL } from '@/lib/llm'
+import { DEFAULT_MODEL } from "@/lib/llm";
+import { streamText, createTextStreamResponse, toTextStream } from "ai";
 
 
-export async function POST() {
+export async function POST(req: Request) {
+    // const { message } = await req.json()
 
-    const { text } = await generateText({
+
+    const result = streamText({
         model: DEFAULT_MODEL,
-        prompt: "Give me your introduction"
+        prompt: "Tell me about your self in 500 words",
+        abortSignal: req.signal
     })
 
-    return Response.json({ data: text })
-
+    return createTextStreamResponse({
+        stream: toTextStream({ stream: result.stream })
+    })
 }
