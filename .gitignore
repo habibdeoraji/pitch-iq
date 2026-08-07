@@ -40,6 +40,7 @@ yarn-error.log*
 # personal project notes (local reference only, not for the repo)
 /NOTES.md
 /AI-Stack/
+/Notes/
 
 # typescript
 *.tsbuildinfo
