@@ -2,7 +2,8 @@
 
 import { useChat } from "@ai-sdk/react";
 import { renderMarkdown } from "@/lib/markdown";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { estimateCostUsd, sumUsage, type ChatMessage } from "@/lib/usage";
+import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -11,7 +12,7 @@ export function Chat({
   initialMessages,
 }: {
   chatId: string;
-  initialMessages: UIMessage[];
+  initialMessages: ChatMessage[];
 }) {
   const [input, setInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export function Chat({
   const router = useRouter();
 
   const { messages, sendMessage, regenerate, setMessages, stop, status, error } =
-    useChat({
+    useChat<ChatMessage>({
       id: chatId,
       messages: initialMessages,
       transport: new DefaultChatTransport({ api: `/api/chat/${chatId}` }),
@@ -30,6 +31,9 @@ export function Chat({
     });
 
   const isStreaming = status === "submitted" || status === "streaming";
+
+  const usage = useMemo(() => sumUsage(messages), [messages]);
+  const costUsd = useMemo(() => estimateCostUsd(usage), [usage]);
 
   // `status` flips to "streaming" as soon as the response connection opens —
   // before the model has actually produced any visible text. Keep the
@@ -64,7 +68,7 @@ export function Chat({
     setInput("");
   }
 
-  function startEdit(message: UIMessage) {
+  function startEdit(message: ChatMessage) {
     const text = message.parts
       .filter((part) => part.type === "text")
       .map((part) => part.text)
@@ -90,8 +94,16 @@ export function Chat({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-black/10 dark:border-white/10 px-6 py-4">
+      <header className="flex shrink-0 items-center justify-between border-b border-black/10 dark:border-white/10 px-6 py-4">
         <h1 className="text-lg font-semibold tracking-tight">PitchIQ</h1>
+        {usage.totalTokens > 0 && (
+          <span
+            title={`${usage.inputTokens.toLocaleString()} input + ${usage.outputTokens.toLocaleString()} output tokens this session (estimated)`}
+            className="font-mono text-xs tabular-nums text-black/40 dark:text-white/40"
+          >
+            {formatTokenCount(usage.totalTokens)} tokens · {formatCostUsd(costUsd)}
+          </span>
+        )}
       </header>
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
@@ -180,7 +192,7 @@ function ChatBubble({
   canRetry,
   disabled,
 }: {
-  message: UIMessage;
+  message: ChatMessage;
   isEditing: boolean;
   editingText: string;
   onEditingTextChange: (text: string) => void;
@@ -274,6 +286,17 @@ function ChatBubble({
       )}
     </div>
   );
+}
+
+function formatTokenCount(count: number): string {
+  if (count < 1000) return `${count}`;
+  return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+}
+
+function formatCostUsd(cost: number): string {
+  if (cost === 0) return "$0.00";
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
 }
 
 function TypingIndicator() {

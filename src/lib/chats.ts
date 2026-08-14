@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { UIMessage } from "ai";
+import type { ChatMessage } from "@/lib/usage";
 
 export type ChatSummary = {
   id: string;
@@ -7,8 +7,8 @@ export type ChatSummary = {
   updatedAt: string;
 };
 
-export async function getChatMessages(chatId: string): Promise<UIMessage[]> {
-  const result = await db.query<{ messages: UIMessage[] }>(
+export async function getChatMessages(chatId: string): Promise<ChatMessage[]> {
+  const result = await db.query<{ messages: ChatMessage[] }>(
     "select messages from chats where id = $1",
     [chatId]
   );
@@ -18,7 +18,7 @@ export async function getChatMessages(chatId: string): Promise<UIMessage[]> {
 export async function listChats(limit = 50): Promise<ChatSummary[]> {
   const result = await db.query<{
     id: string;
-    messages: UIMessage[];
+    messages: ChatMessage[];
     updated_at: string;
   }>(
     `select id, messages, updated_at
@@ -36,7 +36,7 @@ export async function listChats(limit = 50): Promise<ChatSummary[]> {
   }));
 }
 
-function titleFromMessages(messages: UIMessage[]): string {
+function titleFromMessages(messages: ChatMessage[]): string {
   const firstUserMessage = messages.find((message) => message.role === "user");
   const text =
     firstUserMessage?.parts
@@ -50,7 +50,7 @@ function titleFromMessages(messages: UIMessage[]): string {
 
 export async function saveChatMessages(
   chatId: string,
-  messages: UIMessage[]
+  messages: ChatMessage[]
 ): Promise<void> {
   await db.query(
     `insert into chats (id, messages, updated_at)
