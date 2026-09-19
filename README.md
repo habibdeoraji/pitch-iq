@@ -11,6 +11,17 @@ npm install
 npm run dev
 ```
 
+The SQL files in `db/init/` only run when the Postgres volume is first created. After changing them, reset the volume with `docker compose down -v && docker compose up -d` (this deletes local data).
+
+## Project layout
+
+- `src/app/page.tsx` — redirects to a new chat at `/chat/<uuid>`
+- `src/app/chat/` — chat UI with a sidebar of saved sessions
+- `src/app/api/chat/[chatId]/route.ts` — streaming chat endpoint
+- `src/app/docs/` — dev-only viewer for local Markdown notes (returns 404 outside `next dev`)
+- `src/lib/` — shared code: DB client, chat persistence, LLM setup, token/cost usage, Markdown rendering
+- `db/init/` — schema scripts run by the Postgres container on first start
+
 ## Stack
 
 - **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS
