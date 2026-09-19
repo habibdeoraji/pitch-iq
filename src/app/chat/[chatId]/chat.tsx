@@ -5,7 +5,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { estimateCostUsd, sumUsage, type ChatMessage } from "@/lib/usage";
 import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export function Chat({
   chatId,
@@ -18,6 +18,7 @@ export function Chat({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
   const { messages, sendMessage, regenerate, setMessages, stop, status, error } =
@@ -61,11 +62,29 @@ export function Chat({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, status]);
 
+  // Grow the composer with its content (capped by its max-height) and shrink
+  // it back once the input is cleared after sending.
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const borders = el.offsetHeight - el.clientHeight;
+    el.style.height = `${el.scrollHeight + borders}px`;
+  }, [input]);
+
   function handleSubmit(e: React.SubmitEvent) {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
     sendMessage({ text: input });
     setInput("");
+  }
+
+  // Enter sends, Shift+Enter inserts a newline. Ignore Enter while an IME is
+  // composing so confirming a candidate doesn't send a half-typed message.
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    e.currentTarget.form?.requestSubmit();
   }
 
   function startEdit(message: ChatMessage) {
@@ -146,13 +165,17 @@ export function Chat({
           onSubmit={handleSubmit}
           className="mx-auto flex max-w-2xl items-end gap-2"
         >
-          <input
+          <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleInputKeyDown}
             disabled={isStreaming}
             placeholder="Message PitchIQ..."
+            aria-label="Message"
+            rows={1}
             autoFocus
-            className="flex-1 rounded-full border border-black/10 bg-black/3 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-black/40 focus:border-black/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/6 dark:placeholder:text-white/40 dark:focus:border-white/20"
+            className="max-h-40 flex-1 resize-none overflow-y-auto rounded-3xl border border-black/10 bg-black/3 px-4 py-2.5 text-sm leading-5 outline-none transition-colors placeholder:text-black/40 focus:border-black/20 disabled:opacity-50 dark:border-white/10 dark:bg-white/6 dark:placeholder:text-white/40 dark:focus:border-white/20"
           />
           {isStreaming ? (
             <button
