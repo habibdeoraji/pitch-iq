@@ -243,7 +243,9 @@ function ChatBubble({
     );
   }
 
-  const showAction = isUser ? canEdit : canRetry;
+  // Assistant replies can always be copied; edit/retry stay limited to the
+  // most recent turn.
+  const showActions = isUser ? canEdit : true;
 
   return (
     <div
@@ -259,7 +261,7 @@ function ChatBubble({
           dangerouslySetInnerHTML={{ __html: renderMarkdown(text) }}
         />
       )}
-      {showAction && (
+      {showActions && (
         <div className="mt-1 flex h-5 gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
           {isUser ? (
             <button
@@ -272,19 +274,54 @@ function ChatBubble({
               <PencilIcon />
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={onRetry}
-              disabled={disabled}
-              aria-label="Retry response"
-              className="text-black/40 hover:text-black/70 disabled:opacity-40 dark:text-white/40 dark:hover:text-white/70"
-            >
-              <RetryIcon />
-            </button>
+            <>
+              <CopyButton text={text} />
+              {canRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  disabled={disabled}
+                  aria-label="Retry response"
+                  className="text-black/40 hover:text-black/70 disabled:opacity-40 dark:text-white/40 dark:hover:text-white/70"
+                >
+                  <RetryIcon />
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timeout = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timeout);
+  }, [copied]);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch {
+      // Clipboard access can be denied (e.g. insecure context); nothing to do.
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      aria-label={copied ? "Copied" : "Copy response"}
+      className="text-black/40 hover:text-black/70 dark:text-white/40 dark:hover:text-white/70"
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
   );
 }
 
@@ -365,6 +402,41 @@ function RetryIcon() {
     >
       <path d="M3 12a9 9 0 1 1 2.64 6.36" />
       <path d="M3 21v-6h6" />
+    </svg>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M20 6 9 17l-5-5" />
     </svg>
   );
 }
